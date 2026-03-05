@@ -6,7 +6,7 @@ import random
 # SETUP HALAMAN
 # -----------------------------
 st.set_page_config(page_title="Togel Predictor", layout="wide")
-st.title("🎯 Togel Predictor Web (Copy-Paste Version)")
+st.title("🎯 Togel Predictor Web (Copy-Paste Fixed Version)")
 
 # -----------------------------
 # INPUT USER
@@ -20,15 +20,15 @@ mode = st.selectbox("Pilih mode:", [2,3,4,5])
 # FUNCTIONS
 # -----------------------------
 def parse_history(history_input):
-    """Ubah input user jadi list result"""
+    """Ubah input user jadi list result, buang kosong/non-angka"""
     lines = history_input.splitlines()
-    results = [line.strip() for line in lines if line.strip()]
+    results = [line.strip() for line in lines if line.strip() and any(c.isdigit() for c in line.strip())]
     return results
 
 def analyze_frequency(history):
     """Hitung frekuensi tiap angka"""
     all_digits = "".join(history)
-    freq = Counter(all_digits)
+    freq = Counter([c for c in all_digits if c.isdigit()])
     return freq
 
 def analyze_delay(history):
@@ -37,19 +37,25 @@ def analyze_delay(history):
     delay_count = {}
     for i, result in enumerate(history[::-1]):
         for d in result:
-            if d not in last_pos:
+            if d.isdigit() and d not in last_pos:
                 last_pos[d] = i
                 delay_count[d] = i + 1
     return delay_count
 
 def generate_candidates(freq, digits, count=20):
-    """Generate kandidat angka berdasarkan frekuensi"""
+    """Generate kandidat angka berdasarkan frekuensi, aman 100%"""
     digits_list = list(freq.keys())
     weights = list(freq.values())
     candidates = []
-    for _ in range(count):
+
+    if not digits_list:
+        return ["Tidak ada angka valid di history"] * count
+
+    while len(candidates) < count:
         num = "".join(random.choices(digits_list, weights, k=digits))
-        candidates.append(num)
+        if len(num) == digits:
+            candidates.append(num)
+
     return candidates
 
 # -----------------------------
@@ -58,7 +64,7 @@ def generate_candidates(freq, digits, count=20):
 if st.button("Generate Kandidat"):
     history = parse_history(history_input)
     if not history:
-        st.warning("Paste dulu result history!")
+        st.warning("Paste dulu result history yang valid!")
     else:
         freq = analyze_frequency(history)
         delay = analyze_delay(history)
